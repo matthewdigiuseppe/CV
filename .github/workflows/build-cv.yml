@@ -1,0 +1,30 @@
+name: Build CV and publish to website
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile LaTeX
+        uses: xu-cheng/latex-action@v3
+        with:
+          root_file: main.tex
+
+      - name: Push PDF to website repo
+        env:
+          GH_TOKEN: ${{ secrets.WEBSITE_REPO_TOKEN }}
+        run: |
+          git clone https://x-access-token:${GH_TOKEN}@github.com/matthewdigiuseppe/matthewdigiuseppe.github.io.git site
+          cp main.pdf site/CV.pdf
+          cd site
+          git config user.email "actions@github.com"
+          git config user.name "github-actions[bot]"
+          git add CV.pdf
+          git diff --cached --quiet || git commit -m "Update CV.pdf from Overleaf"
+          git push
